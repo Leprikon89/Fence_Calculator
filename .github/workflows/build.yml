@@ -2,48 +2,41 @@ name: Build Fence Calculator Executable
 
 on:
   push:
-    branches:
-      - main  # Срабатывает при каждом пуше в ветку main
-  workflow_dispatch:  # Позволяет запускать вручную из интерфейса GitHub
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest  # Используем Windows для сборки .exe
+    runs-on: windows-latest
 
     steps:
-      # Шаг 1: Выполняем чекаут кода
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Шаг 2: Устанавливаем Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Укажите версию Python
+          python-version: '3.9'
 
-      # Шаг 3: Устанавливаем зависимости
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
+          pip install pyinstaller
           pip install -r requirements.txt
 
-      # Шаг 4: Собираем исполняемый файл с помощью PyInstaller
       - name: Build executable
         run: |
-          pyinstaller --onefile --windowed fence_calculator.py
-          # Если у вас есть дополнительные файлы, добавьте их через --add-data
-          # pyinstaller --onefile --windowed --add-data "prices.xlsx;." fence_calculator.py
+          pyinstaller --onefile --windowed --add-data "prices.xlsx;." fence_calculator.py
 
-      # Шаг 5: Архивируем результаты
       - name: Archive artifacts
+        shell: powershell
         run: |
-          mkdir dist_artifacts
-          cp dist/fence_calculator.exe dist_artifacts/
-          tar -czvf fence_calculator_artifacts.tar.gz dist_artifacts/
+          New-Item -ItemType Directory -Force -Path dist_artifacts
+          Copy-Item -Path dist\fence_calculator.exe -Destination dist_artifacts\
+          Compress-Archive -Path dist_artifacts -DestinationPath fence_calculator_artifacts.zip
 
-      # Шаг 6: Публикуем артефакты
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3  # Убедитесь, что версия указана правильно
+        uses: actions/upload-artifact@v4  # ИСПРАВЛЕНО
         with:
           name: fence-calculator-exe
-          path: fence_calculator_artifacts.tar.gz
+          path: fence_calculator_artifacts.zip
