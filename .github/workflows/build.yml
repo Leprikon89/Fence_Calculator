@@ -43,7 +43,7 @@ jobs:
 
       # Шаг 6: Публикуем артефакты
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3  # Убедитесь, что версия указана правильно
         with:
           name: fence-calculator-exe
           path: fence_calculator_artifacts.tar.gz
