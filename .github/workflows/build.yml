@@ -20,23 +20,40 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install pyinstaller
+          python -m pip install --upgrade pip
+          pip install pyinstaller pandas openpyxl
+          # Убедитесь что requirements.txt существует или удалите следующую строку
           pip install -r requirements.txt
+
+      - name: Verify files
+        run: |
+          echo "Содержимое рабочей директории:"
+          dir
+          echo "Проверка наличия файлов:"
+          if not exist fence_calculator.py exit 1
+          if not exist prices.xlsx exit 1
 
       - name: Build executable
         run: |
-          pyinstaller --onefile --windowed --add-data "prices.xlsx;." fence_calculator.py
+          pyinstaller --onefile --windowed --add-data "prices.xlsx;." fence_calculator.py || echo "PyInstaller failed"
+
+      - name: Debug build output
+        if: failure()
+        run: |
+          echo "Проверка dist директории:"
+          if exist dist ( dir dist )
+          echo "Логи сборки:"
+          if exist build\*.log ( type build\*.log )
 
       - name: Archive artifacts
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path dist_artifacts
-          Copy-Item -Path dist\fence_calculator.exe -Destination dist_artifacts\
+          Copy-Item -Path dist\fence_calculator.exe -Destination dist_artifacts -ErrorAction Stop
           Compress-Archive -Path dist_artifacts -DestinationPath fence_calculator_artifacts.zip
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4  # ИСПРАВЛЕНО
+        uses: actions/upload-artifact@v4
         with:
           name: fence-calculator-exe
           path: fence_calculator_artifacts.zip
